@@ -1,0 +1,46 @@
+name: Build new release
+on:
+  schedule:
+    - cron: "0 0 * * *" # every day at 12:00 AM UTC
+  workflow_dispatch: {}
+
+jobs:
+  check_release:
+    name: Build new release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Check & update spec
+        id: check
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          LATEST_RAW=$(gh release ls -R jj-vcs/jj -L 1 --json tagName --template '{{index . 0 "tagName"}}')
+          LATEST=$(echo ${LATEST_RAW#v})
+          CURRENT_RAW=$(cat jj-cli.spec | grep "Version:")
+          CURRENT=$(echo ${CURRENT_RAW#Version:})
+
+          echo "Latest: $LATEST"
+          echo "Current: $CURRENT"
+
+          if [ "x${LATEST}" != "x${CURRENT}" ]; then
+            sed -i "s/${CURRENT}/${LATEST}/" jj-cli.spec
+            git add jj-cli.spec
+            git -c user.name=web-flow -c user.email=noreply@github.com commit -m "update to ${LATEST}"
+            git push
+            echo "updated=true" >> $GITHUB_OUTPUT
+          fi
+      - name: Start copr build
+        if: ${{ steps.check.outputs.updated }}
+        run: |
+          sudo apt install -y python3-pip
+          pip3 install --break-system-packages copr-cli
+
+          echo "[copr-cli]" >> ~/.config/copr
+          echo "login = ${{ secrets.COPR_LOGIN }}" >> ~/.config/copr
+          echo "username = aldantanneo" >> ~/.config/copr
+          echo "token = ${{ secrets.COPR_TOKEN }}" >> ~/.config/copr
+          echo "copr_url = https://copr.fedorainfracloud.org" >> ~/.config/copr
+          chmod 600 ~/.config/copr
+
+          copr-cli build aldantanneo/jj-vcs jj-cli.spec --nowait
