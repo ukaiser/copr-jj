@@ -38,9 +38,9 @@ jobs:
 
           echo "[copr-cli]" >> ~/.config/copr
           echo "login = ${{ secrets.COPR_LOGIN }}" >> ~/.config/copr
-          echo "username = aldantanneo" >> ~/.config/copr
+          echo "username = ukaiser" >> ~/.config/copr
           echo "token = ${{ secrets.COPR_TOKEN }}" >> ~/.config/copr
           echo "copr_url = https://copr.fedorainfracloud.org" >> ~/.config/copr
           chmod 600 ~/.config/copr
 
-          copr-cli build aldantanneo/jj-vcs jj-cli.spec --nowait
+          copr-cli build ukaiser/jj-vcs jj-cli.spec --nowait
