@@ -21,7 +21,7 @@ Jujutsu is unlike most other systems, because internally it abstracts the user i
 %autosetup -C
 
 %build
-cargo build --release
+cargo build --release --locked
 
 %install
 install -Dm755 %{_builddir}/%{buildsubdir}/target/release/jj %{buildroot}%{_bindir}/jj
